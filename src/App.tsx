@@ -29,21 +29,21 @@ function App() {
           <h1 className="app-title">Dev Kanban Board</h1>
 
           <button
-            className="theme-toggle-button"
+            className="header-btn"
             onClick={() => setDarkMode((prev) => !prev)}
           >
             {darkMode ? 'Light Mode' : 'Dark Mode'}
           </button>
 
           <button
-            className="theme-toggle-button"
+            className="header-btn"
             onClick={exportTasks}
           >
-            Export JSON
+            Export
           </button>
 
-          <label className="theme-toggle-button" style={{ display: 'inline-flex', alignItems: 'center' }}>
-            Import JSON
+          <label className="header-btn">
+            Import
             <input
               type="file"
               accept="application/json"
@@ -61,12 +61,16 @@ function App() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 addTask(newTaskTitle);
+                setNewTaskTitle('');
               }
             }}
-            placeholder="Add a new task"
+            placeholder="New task title..."
             className="task-input"
           />
-          <button onClick={() => addTask(newTaskTitle)} className="add-task-button">
+          <button
+            onClick={() => { addTask(newTaskTitle); setNewTaskTitle(''); }}
+            className="add-task-button"
+          >
             Add
           </button>
         </div>

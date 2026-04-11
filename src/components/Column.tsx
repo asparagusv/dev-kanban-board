@@ -15,6 +15,7 @@ interface ColumnProps {
 
 function Column({ title, status, limit, tasks, onDelete, onMoveTaskArrow, onMoveTaskDrag, onUpdateTask }: ColumnProps) {
     const [isDragOver, setIsDragOver] = useState(false);
+
     const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
         e.preventDefault();
         setIsDragOver(true);
@@ -33,28 +34,42 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskArrow, onMove
 
     const isFull = limit !== undefined && tasks.length >= limit;
 
+    const columnClass = [
+        'column',
+        `column-${status}`,
+        isDragOver ? 'column-drag-over' : '',
+    ].filter(Boolean).join(' ');
+
+    const countLabel = limit !== undefined ? `${tasks.length}/${limit}` : `${tasks.length}`;
+
     return (
-        <section className={isDragOver ? 'column column-drag-over' : 'column'} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e)}>
-            <h2 className="column-title">
-                {title}
-                {limit !== undefined && (
-                    <span style={{ marginLeft: 8, fontSize: 12 }}>
-                        ({tasks.length}/{limit})
-                    </span>
-                )}
-            </h2>
+        <section
+            className={columnClass}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            <div className="column-header">
+                <div className="column-status-dot" />
+                <h2 className="column-title">{title}</h2>
+                <span className="column-count">{countLabel}</span>
+            </div>
 
             {isFull && (
-                <div style={{ fontSize: 12, color: 'red', marginBottom: 8 }}>
-                    Limit reached
-                </div>
+                <div className="wip-warning">WIP limit reached</div>
             )}
 
             <div className="task-list">
                 {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} onDelete={onDelete} onMoveTaskArrow={onMoveTaskArrow} onUpdateTask={onUpdateTask} onDragStart={(e, task) => {
-                        e.dataTransfer.setData('taskId', task.id.toString())
-                    }}
+                    <TaskCard
+                        key={task.id}
+                        task={task}
+                        onDelete={onDelete}
+                        onMoveTaskArrow={onMoveTaskArrow}
+                        onUpdateTask={onUpdateTask}
+                        onDragStart={(e, t) => {
+                            e.dataTransfer.setData('taskId', t.id.toString());
+                        }}
                     />
                 ))}
             </div>

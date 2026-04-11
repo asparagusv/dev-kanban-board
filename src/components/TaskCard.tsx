@@ -16,7 +16,6 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
     const handleSave = () => {
         const trimmed = editValue.trim();
         if (!trimmed) return;
-
         onUpdateTask(task.id, trimmed);
         setIsEditing(false);
     };
@@ -27,63 +26,71 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
     };
 
     return (
-        <div className="task-card" draggable onDragStart={(e) => onDragStart(e, task)}>
+        <div
+            className={`task-card${isEditing ? ' is-editing' : ''}`}
+            draggable={!isEditing}
+            onDragStart={!isEditing ? (e) => onDragStart(e, task) : undefined}
+        >
             {isEditing ? (
                 <>
                     <input
+                        autoFocus
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="task-input"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSave();
+                            if (e.key === 'Escape') handleCancel();
+                        }}
+                        className="edit-input"
                     />
-
-                    <div className="task-card-actions">
-                        <button className="move-button" onClick={handleSave}>
-                            Save
-                        </button>
-                        <button className="move-button" onClick={handleCancel}>
-                            Cancel
-                        </button>
+                    <div className="edit-actions">
+                        <button className="btn-cancel" onClick={handleCancel}>Cancel</button>
+                        <button className="btn-save" onClick={handleSave}>Save</button>
                     </div>
                 </>
             ) : (
                 <>
-                    <div className="task-card-header">
-                        <span>{task.title}</span>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                    <div className="task-title">{task.title}</div>
+                    <div className="task-card-footer">
+                        <div className="card-nav-buttons">
                             <button
-                                className="move-button"
-                                onClick={() => setIsEditing(true)}
+                                className="icon-btn"
+                                onClick={() => onMoveTaskArrow(task.id, 'left')}
+                                disabled={task.status === 'todo'}
+                                title="Move left"
                             >
-                                Edit
+                                ←
                             </button>
                             <button
-                                className="delete-button"
-                                onClick={() => onDelete(task.id)}
+                                className="icon-btn"
+                                onClick={() => onMoveTaskArrow(task.id, 'right')}
+                                disabled={task.status === 'done'}
+                                title="Move right"
                             >
-                                Delete
+                                →
                             </button>
                         </div>
-                    </div>
-                    <div className="task-card-actions">
-                        <button
-                            className="move-button"
-                            onClick={() => onMoveTaskArrow(task.id, 'left')}
-                            disabled={task.status === 'todo'}
-                        >
-                            ←
-                        </button>
-
-                        <button
-                            className="move-button"
-                            onClick={() => onMoveTaskArrow(task.id, 'right')}
-                            disabled={task.status === 'done'}
-                        >
-                            →
-                        </button>
+                        <div className="card-actions">
+                            <button
+                                className="icon-btn primary"
+                                onClick={() => setIsEditing(true)}
+                                title="Edit"
+                            >
+                                ✎
+                            </button>
+                            <button
+                                className="icon-btn danger"
+                                onClick={() => onDelete(task.id)}
+                                title="Delete"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 </>
             )}
         </div>
     );
 }
+
 export default TaskCard;
