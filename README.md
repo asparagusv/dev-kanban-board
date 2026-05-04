@@ -414,5 +414,73 @@ if (isTaskArray(parsed)) {
 
 `data is Task[]` という誓約によって、不確かな外部データを「信頼できるデータ」へと昇華させることができました。
 
+### 💡 連続クリックの罠：なぜ State ではなく `prev` を信じるべきか？
+
+「WIP制限を超えないように、移動先のタスク数を数えたい」。
+そう思った時、素直に現在のコンポーネントの `tasks` ステートを見に行っていませんか？
+
+#### ❌ Before: 意図せずバグを生む危険な書き方
+```typescript
+// BAD: 最新ではなく、レンダー時の古い tasks を参照してしまう
+const canMoveToStatus = (nextStatus: TaskStatus) => {
+    const limit = WIP_LIMITS[nextStatus];
+    if (limit === undefined) return true;
+
+    // 🚨 現在の tasks から数をカウント（これがヤバい）
+    const count = tasks.filter((task) => task.status === nextStatus).length;
+    return count < limit;
+};
+```
+
+一見すると完璧に見えますが、**１度のイベントハンドラに複数回setが呼び出された時** にこのコードは破綻します。
+
+#### 🚨 裏側で起きている恐ろしいバッチ処理
+React はパフォーマンス最適化のため、同じ「イベントハンドラ（ボタンクリック等のユーザーアクション）」内で起きた複数の State 更新を、すぐに画面に反映せず **「バッチ（おまとめ）処理」** します。つまり、最後に1回だけ再描画が行われます。
+
+```typescript
+  const handleBugTest = () => {
+    // 意図的に同時に複数の状態更新（バッチ処理）を走らせる
+    // WIP制限が3の 'in-progress' に、Todoにあるタスクを全て同時に移動させる
+    todoTasks.forEach(task => {
+      moveTaskToStatus(task.id, 'in-progress');
+    });
+  };
+```
+
+1. **1回目**: `tasks` は 0個。制限OK！移動。
+2. **2回目**: 1つ移動したはずなのに、画面が再描画されていないためコンポーネント内の `tasks` は **0個のまま（古い状態）**。制限OK！移動。
+3. **3回目**: まだ `tasks` は 0個のまま。制限OK！移動。
+4. **4回目**: 本当はすでに3個（制限MAX）なのに、**`tasks` が 0個のままだから「まだ0個だから移動OK！」と大嘘の誤判定をして移動させてしまう！**
+
+これが、バグの温床となる **「古い State に縛られる問題（Stale Closure）」** です。イベントハンドラの中では、`tasks` 変数の中身はボタンを押した瞬間の状態のまま固定されているのです。
+
+#### ✅ After: 常に真実を知っている `prev` を使う
+```typescript
+// GOOD: setState に渡ってくる常に最新の prevTasks を参照する
+const canMoveToStatus = (prevTasks: Task[], nextStatus: TaskStatus) => {
+    const limit = WIP_LIMITS[nextStatus];
+    if (limit === undefined) return true;
+
+    // 🛡️ 常に最新状態である prevTasks からカウントする！
+    const count = prevTasks.filter((task) => task.status === nextStatus).length;
+    return count < limit;
+};
+
+// 呼び出し側
+setTasks((prev) => {
+    if (!canMoveToStatus(prev, targetStatus)) return prev; // 最新の prev を判定に渡す
+    // ...更新処理
+});
+```
+
+#### なぜ `prev` だと勝てるのか？
+`setTasks` のコールバック関数に渡ってくる `prev` 引数は、**「画面が再描画されていなくても、直前の処理がしっかり反映された、React が裏で管理している最新の State」** です。
+
+1回目でタスクが移動したら、2回目が呼ばれる瞬間の `prev` にはその移動が確実に反映されています。4回目の時には `prev` の中の数は「3個」になっているため、正しく制限ブロックが働きます。
+
+> **「直前の更新結果をベースに次の計算をするなら、State ではなく `prev` を信じよ」。**
+
+React の裏側の仕様（バッチ処理）を理解し、常に安全なデータフローを構築することがプロの React 開発者への第一歩です。
+
 ---
-*最終更新日: 2026年3月*
+*最終更新日: 2026年5月*
