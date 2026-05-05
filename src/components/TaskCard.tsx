@@ -1,5 +1,12 @@
 import type { Task } from '../types';
 import { useState } from 'react';
+import { Card, CardContent, Typography, IconButton, TextField, Box, Button, Tooltip } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 interface TaskCardProps {
     task: Task;
@@ -27,63 +34,82 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
     };
 
     return (
-        <div className="task-card" draggable onDragStart={(e) => onDragStart(e, task)}>
-            {isEditing ? (
-                <>
-                    <input
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="task-input"
-                    />
-
-                    <div className="task-card-actions">
-                        <button className="move-button" onClick={handleSave}>
-                            Save
-                        </button>
-                        <button className="move-button" onClick={handleCancel}>
-                            Cancel
-                        </button>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <div className="task-card-header">
-                        <span>{task.title}</span>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                                className="move-button"
-                                onClick={() => setIsEditing(true)}
+        <Card
+            draggable
+            onDragStart={(e: any) => onDragStart(e, task)}
+            sx={{
+                cursor: 'grab',
+                '&:active': { cursor: 'grabbing' },
+                transition: 'box-shadow 0.2s',
+                '&:hover': { boxShadow: 4 }
+            }}
+        >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                {isEditing ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <TextField
+                            size="small"
+                            fullWidth
+                            variant="outlined"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSave();
+                                if (e.key === 'Escape') handleCancel();
+                            }}
+                            autoFocus
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <Button size="small" variant="text" color="error" startIcon={<CancelIcon />} onClick={handleCancel}>
+                                Cancel
+                            </Button>
+                            <Button size="small" variant="contained" startIcon={<SaveIcon />} onClick={handleSave}>
+                                Save
+                            </Button>
+                        </Box>
+                    </Box>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Typography variant="body1" sx={{ wordBreak: 'break-word', mt: 0.5 }}>
+                                {task.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 0 }}>
+                                <Tooltip title="Edit task">
+                                    <IconButton size="small" onClick={() => setIsEditing(true)}>
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete task">
+                                    <IconButton size="small" color="error" onClick={() => onDelete(task.id)}>
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                            <IconButton
+                                size="small"
+                                onClick={() => onMoveTaskArrow(task.id, 'left')}
+                                disabled={task.status === 'todo'}
+                                color="primary"
                             >
-                                Edit
-                            </button>
-                            <button
-                                className="delete-button"
-                                onClick={() => onDelete(task.id)}
+                                <ArrowBackIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                                size="small"
+                                onClick={() => onMoveTaskArrow(task.id, 'right')}
+                                disabled={task.status === 'done'}
+                                color="primary"
                             >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                    <div className="task-card-actions">
-                        <button
-                            className="move-button"
-                            onClick={() => onMoveTaskArrow(task.id, 'left')}
-                            disabled={task.status === 'todo'}
-                        >
-                            ←
-                        </button>
-
-                        <button
-                            className="move-button"
-                            onClick={() => onMoveTaskArrow(task.id, 'right')}
-                            disabled={task.status === 'done'}
-                        >
-                            →
-                        </button>
-                    </div>
-                </>
-            )}
-        </div>
+                                <ArrowForwardIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                )}
+            </CardContent>
+        </Card>
     );
 }
+
 export default TaskCard;
