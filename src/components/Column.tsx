@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Task, TaskStatus } from '../types';
 import TaskCard from './TaskCard';
-import { Paper, Typography, Box, useTheme, Badge } from '@mui/material';
+import { Paper, Typography, Box, useTheme } from '@mui/material';
 
 interface ColumnProps {
     title: string;
@@ -9,12 +9,11 @@ interface ColumnProps {
     limit?: number;
     tasks: Task[];
     onDelete: (id: number) => void;
-    onMoveTaskArrow: (id: number, direction: 'left' | 'right') => void;
-    onMoveTaskDrag: (id: number, targetStatus: TaskStatus) => void;
+    onMoveTaskToStatus: (id: number, targetStatus: TaskStatus) => void;
     onUpdateTask: (id: number, title: string) => void;
 }
 
-function Column({ title, status, limit, tasks, onDelete, onMoveTaskArrow, onMoveTaskDrag, onUpdateTask }: ColumnProps) {
+function Column({ title, status, limit, tasks, onDelete, onMoveTaskToStatus, onUpdateTask }: ColumnProps) {
     const theme = useTheme();
     const [isDragOver, setIsDragOver] = useState(false);
 
@@ -31,7 +30,7 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskArrow, onMove
         e.preventDefault();
         setIsDragOver(false);
         const taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
-        onMoveTaskDrag(taskId, status);
+        onMoveTaskToStatus(taskId, status);
     };
 
     const isFull = limit !== undefined && tasks.length >= limit;
@@ -73,7 +72,7 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskArrow, onMove
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1, overflowY: 'auto' }}>
                 {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} onDelete={onDelete} onMoveTaskArrow={onMoveTaskArrow} onUpdateTask={onUpdateTask} onDragStart={(e, task) => {
+                    <TaskCard key={task.id} task={task} onDelete={onDelete} onMoveTaskToStatus={onMoveTaskToStatus} onUpdateTask={onUpdateTask} onDragStart={(e, task) => {
                         e.dataTransfer.setData('taskId', task.id.toString())
                     }}
                     />

@@ -1,4 +1,4 @@
-import type { Task } from '../types';
+import type { Task, TaskStatus } from '../types';
 import { useState } from 'react';
 import { Card, CardContent, Typography, IconButton, TextField, Box, Button, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -7,16 +7,17 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
+import { statusOrder } from '../types';
 
 interface TaskCardProps {
     task: Task;
     onDelete: (id: number) => void;
-    onMoveTaskArrow: (id: number, direction: 'left' | 'right') => void;
+    onMoveTaskToStatus: (id: number, targetStatus: TaskStatus) => void;
     onUpdateTask: (id: number, title: string) => void;
     onDragStart: (e: React.DragEvent<HTMLDivElement>, task: Task) => void;
 }
 
-function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }: TaskCardProps) {
+function TaskCard({ task, onDelete, onMoveTaskToStatus, onUpdateTask, onDragStart }: TaskCardProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(task.title);
 
@@ -32,6 +33,17 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
         setEditValue(task.title);
         setIsEditing(false);
     };
+
+    const onClickArrow = (direction: 'left' | 'right') => {
+        const currentIndex = statusOrder.indexOf(task.status);
+        const nextIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+
+        if (nextIndex < 0 || nextIndex >= statusOrder.length) return;
+
+        const nextStatus = statusOrder[nextIndex];
+
+        onMoveTaskToStatus(task.id, nextStatus);
+    }
 
     return (
         <Card
@@ -90,7 +102,7 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                             <IconButton
                                 size="small"
-                                onClick={() => onMoveTaskArrow(task.id, 'left')}
+                                onClick={() => onClickArrow('left')}
                                 disabled={task.status === 'todo'}
                                 color="primary"
                             >
@@ -98,7 +110,7 @@ function TaskCard({ task, onDelete, onMoveTaskArrow, onUpdateTask, onDragStart }
                             </IconButton>
                             <IconButton
                                 size="small"
-                                onClick={() => onMoveTaskArrow(task.id, 'right')}
+                                onClick={() => onClickArrow('right')}
                                 disabled={task.status === 'done'}
                                 color="primary"
                             >
