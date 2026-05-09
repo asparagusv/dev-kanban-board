@@ -1,21 +1,27 @@
-import { useState } from 'react';
-import type { Task, TaskStatus } from '../types';
+import { useState, useMemo } from 'react';
+import type { TaskStatus } from '../types';
 import TaskCard from './TaskCard';
 import { Paper, Typography, Box, useTheme } from '@mui/material';
+import { useTaskStore } from '../store/useTaskStore';
 
 interface ColumnProps {
     title: string;
     status: TaskStatus;
-    limit?: number;
-    tasks: Task[];
-    onDelete: (id: number) => void;
-    onMoveTaskToStatus: (id: number, targetStatus: TaskStatus) => void;
-    onUpdateTask: (id: number, title: string) => void;
 }
 
-function Column({ title, status, limit, tasks, onDelete, onMoveTaskToStatus, onUpdateTask }: ColumnProps) {
+function Column({ title, status }: ColumnProps) {
     const theme = useTheme();
     const [isDragOver, setIsDragOver] = useState(false);
+
+    // state.tasks は参照が安定（tasks が変わらない限り同じ配列）→ useShallow 不要
+    const tasks = useTaskStore((state) => state.tasks);
+    // tasks が変わった時だけ filter → 結果の参照も安定 → 無駄な再レンダリングなし
+    const filteredTasks = useMemo(
+        () => tasks.filter((t) => t.status === status),
+        [tasks, status]
+    );
+    const limit = useTaskStore((state) => state.wipLimits[status]);
+    const moveTaskToStatus = useTaskStore((state) => state.moveTaskToStatus);
 
     const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
         e.preventDefault();
@@ -30,10 +36,10 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskToStatus, onU
         e.preventDefault();
         setIsDragOver(false);
         const taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
-        onMoveTaskToStatus(taskId, status);
+        moveTaskToStatus(taskId, status);
     };
 
-    const isFull = limit !== undefined && tasks.length >= limit;
+    const isFull = limit !== undefined && filteredTasks.length >= limit;
 
     return (
         <Paper
@@ -59,7 +65,7 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskToStatus, onU
                 </Typography>
                 {limit !== undefined && (
                     <Typography variant="body2" color={isFull ? 'error' : 'text.secondary'}>
-                        {tasks.length} / {limit}
+                        {filteredTasks.length} / {limit}
                     </Typography>
                 )}
             </Box>
@@ -71,11 +77,8 @@ function Column({ title, status, limit, tasks, onDelete, onMoveTaskToStatus, onU
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1, overflowY: 'auto' }}>
-                {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} onDelete={onDelete} onMoveTaskToStatus={onMoveTaskToStatus} onUpdateTask={onUpdateTask} onDragStart={(e, task) => {
-                        e.dataTransfer.setData('taskId', task.id.toString())
-                    }}
-                    />
+                {filteredTasks.map((task) => (
+                    <TaskCard key={task.id} task={task} />
                 ))}
             </Box>
         </Paper>

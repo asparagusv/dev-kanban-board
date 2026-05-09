@@ -13,22 +13,13 @@ import { createAppTheme } from './theme';
 const Column = lazy(() => import('./components/Column'));
 
 function App() {
-  const {
-    tasks,
-    wipLimits,
-    addTask,
-    deleteTask,
-    updateTask,
-    moveTaskToStatus,
-    setTasks,
-  } = useTaskStore();
+  // 🎯 App はヘッダー操作に必要なアクションだけ個別に取得
+  const addTask = useTaskStore((state) => state.addTask);
+  const setTasks = useTaskStore((state) => state.setTasks);
+  const tasks = useTaskStore((state) => state.tasks); // export 用
 
   const { darkMode, toggleDarkMode } = useThemeStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
-
-  const todoTasks = useMemo(() => tasks.filter((t) => t.status === 'todo'), [tasks]);
-  const inProgressTasks = useMemo(() => tasks.filter((t) => t.status === 'in-progress'), [tasks]);
-  const doneTasks = useMemo(() => tasks.filter((t) => t.status === 'done'), [tasks]);
 
   const theme = useMemo(() => createAppTheme(darkMode ? 'dark' : 'light'), [darkMode]);
 
@@ -123,11 +114,12 @@ function App() {
             </Button>
           </Box>
 
+          {/* 🎯 Column に props でデータを渡す必要がなくなった！ */}
           <Suspense fallback={<Typography>Loading...</Typography>}>
             <Box sx={{ display: 'flex', gap: 3, flexGrow: 1, overflowX: 'auto', pb: 2 }}>
-              <Column title="Todo" status="todo" limit={wipLimits['todo']} tasks={todoTasks} onDelete={deleteTask} onMoveTaskToStatus={moveTaskToStatus} onUpdateTask={updateTask} />
-              <Column title="In Progress" status="in-progress" limit={wipLimits['in-progress']} tasks={inProgressTasks} onDelete={deleteTask} onMoveTaskToStatus={moveTaskToStatus} onUpdateTask={updateTask} />
-              <Column title="Done" status="done" limit={wipLimits['done']} tasks={doneTasks} onDelete={deleteTask} onMoveTaskToStatus={moveTaskToStatus} onUpdateTask={updateTask} />
+              <Column title="Todo" status="todo" />
+              <Column title="In Progress" status="in-progress" />
+              <Column title="Done" status="done" />
             </Box>
           </Suspense>
         </Container>

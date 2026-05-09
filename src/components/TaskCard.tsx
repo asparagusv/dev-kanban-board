@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from '../types';
+import type { Task } from '../types';
 import { useState } from 'react';
 import { Card, CardContent, Typography, IconButton, TextField, Box, Button, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,16 +8,17 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { statusOrder } from '../types';
+import { useTaskStore } from '../store/useTaskStore';
 
 interface TaskCardProps {
     task: Task;
-    onDelete: (id: number) => void;
-    onMoveTaskToStatus: (id: number, targetStatus: TaskStatus) => void;
-    onUpdateTask: (id: number, title: string) => void;
-    onDragStart: (e: React.DragEvent<HTMLDivElement>, task: Task) => void;
 }
 
-function TaskCard({ task, onDelete, onMoveTaskToStatus, onUpdateTask, onDragStart }: TaskCardProps) {
+function TaskCard({ task }: TaskCardProps) {
+    // 🎯 アクション関数は安定した参照 → 個別に取得するだけで OK
+    const deleteTask = useTaskStore((state) => state.deleteTask);
+    const moveTaskToStatus = useTaskStore((state) => state.moveTaskToStatus);
+    const updateTask = useTaskStore((state) => state.updateTask);
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(task.title);
 
@@ -25,7 +26,7 @@ function TaskCard({ task, onDelete, onMoveTaskToStatus, onUpdateTask, onDragStar
         const trimmed = editValue.trim();
         if (!trimmed) return;
 
-        onUpdateTask(task.id, trimmed);
+        updateTask(task.id, trimmed);
         setIsEditing(false);
     };
 
@@ -42,13 +43,15 @@ function TaskCard({ task, onDelete, onMoveTaskToStatus, onUpdateTask, onDragStar
 
         const nextStatus = statusOrder[nextIndex];
 
-        onMoveTaskToStatus(task.id, nextStatus);
+        moveTaskToStatus(task.id, nextStatus);
     }
 
     return (
         <Card
             draggable
-            onDragStart={(e: any) => onDragStart(e, task)}
+            onDragStart={(e: React.DragEvent<HTMLDivElement>) => {
+                e.dataTransfer.setData('taskId', task.id.toString());
+            }}
             sx={{
                 cursor: 'grab',
                 '&:active': { cursor: 'grabbing' },
@@ -93,7 +96,7 @@ function TaskCard({ task, onDelete, onMoveTaskToStatus, onUpdateTask, onDragStar
                                     </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Delete task">
-                                    <IconButton size="small" color="error" onClick={() => onDelete(task.id)}>
+                                    <IconButton size="small" color="error" onClick={() => deleteTask(task.id)}>
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
                                 </Tooltip>
