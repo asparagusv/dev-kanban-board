@@ -4,6 +4,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useTasks } from './hooks/useTasks';
 
 const Column = lazy(() => import('./components/Column'));
+import TaskCounter from './components/TaskCounter';
 
 function App() {
   const {
@@ -70,6 +71,9 @@ function App() {
             Add
           </button>
         </div>
+
+        {/* 🧪 実験: 子コンポーネントから useTasks() を直接呼ぶとどうなる？ */}
+        <TaskCounter />
 
         <Suspense fallback={<div>Loading...</div>}>
           <div className="board">
